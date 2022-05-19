@@ -35,54 +35,59 @@ class Game:
         print()
             
     
-    def __check_col(self,move, color):
-        i,j = move
-        if (self.current_state[i,j] == color and
-            self.current_state[i,j] == self.current_state[i+1,j] and
-            self.current_state[i+1,j] == self.current_state[i+2,j] and
-            self.current_state[i+2,j] == self.current_state[i+3,j] and
-            self.current_state[i+3,j] == self.current_state[i+4,j]):
-            return True
+    def __check_col(self, color):
+        for i in range(0, 11):
+            for j in range(0,15):
+                if (self.current_state[i,j] == color and
+                    self.current_state[i,j] == self.current_state[i+1,j] and
+                    self.current_state[i+1,j] == self.current_state[i+2,j] and
+                    self.current_state[i+2,j] == self.current_state[i+3,j] and
+                    self.current_state[i+3,j] == self.current_state[i+4,j]):
+                    return True
         return False
 
-    def __check_row(self,move, color):
-        i,j = move
-        if (all(self.current_state[i,j:j+5] == [color]*5)):
-            return True
+    def __check_row(self, color):
+        for i in range(0, 15):
+            for j in range (0,11):
+                if (all(self.current_state[i,j:j+5] == [color]*5)):
+                    return True
         return False
 
-    def __check_diagonal_right(self, move, color):
-        j,i = move
-        if (self.current_state[j,i] == color and
-            self.current_state[j,i] == self.current_state[j+1,i+1] and
-            self.current_state[j+1,i+1] == self.current_state[j+2,i+2] and
-            self.current_state[j+2,i+2] == self.current_state[j+3,i+3] and
-            self.current_state[j+3,i+3] == self.current_state[j+4,i+4]):
+    def __check_diagonal_right(self, color):
+        for i in range(0,11):
+            for j in range(0,11):
+                if (self.current_state[j,i] == color and
+                    self.current_state[j,i] == self.current_state[j+1,i+1] and
+                    self.current_state[j+1,i+1] == self.current_state[j+2,i+2] and
+                    self.current_state[j+2,i+2] == self.current_state[j+3,i+3] and
+                    self.current_state[j+3,i+3] == self.current_state[j+4,i+4]):
+                    return True
+        return False
+    
+    def __check_diagonal_left(self, color):
+        for i in range(4,15):
+            for j in range(4,15):
+                if (self.current_state[j,i] == color and
+                    self.current_state[j,i] == self.current_state[j-1,i-1] and
+                    self.current_state[j-1,i+1] == self.current_state[j-2,i+2] and
+                    self.current_state[j-2,i+2] == self.current_state[j-3,i+3] and
+                    self.current_state[j-3,i+3] == self.current_state[j-4,i+4]):
+                    return True
+        return False
+
+    def check_win(self, color):
+        if self.__check_row(color):
+            return True
+        if self.__check_col(color):
+            return True
+        if self.__check_diagonal_right(color):
+            return True
+        if self.__check_diagonal_left(color):
             return True
         return False
     
-    def __check_diagonal_left(self, move, color):
-        j,i = move
-        if (self.current_state[j,i] == color and
-            self.current_state[j,i] == self.current_state[j-1,i-1] and
-            self.current_state[j-1,i-1] == self.current_state[j-2,i-2] and
-            self.current_state[j-2,i-2] == self.current_state[j-3,i-3] and
-            self.current_state[j-3,i-3] == self.current_state[j-4,i-4]):
-            return True
-        return False
-
-    def check_win(self,move, color):
-        if self.__check_row(move,color):
-            return True
-        if self.__check_col(move,color):
-            return True
-        if self.__check_diagonal_right(move,color):
-            return True
-        if self.__check_diagonal_left(move,color):
-            return True
-        return False
-    
-    def generate_moves(self):
+    def generate_moves(self,is_black):
+        color = 'O' if is_black else 'X'
         setval = set(i for i in range(15)) 
         Coups = []
         list1 = []
@@ -91,29 +96,30 @@ class Game:
             for j in range(0,15):
                 if self.current_state[i][j] != '.':
                     list2.append((i, j))
-                    if i-1 in setval and j-1 in setval:
-                        list1.append((i-1, j-1))
-                        
-                    if i-1 in setval and j in setval:
-                        list1.append((i-1, j))
-                        
-                    if i-1 in setval and j+1 in setval:
-                        list1.append((i-1, j+1))
-                        
-                    if i in setval and j+1 in setval:
-                        list1.append( (i, j+1) )
-                        
-                    if i+1 in setval and j+1 in setval:
-                        list1.append( (i+1, j+1) )
-                        
-                    if i+1 in setval and j in setval:
-                        list1.append( (i+1, j) )
-                        
-                    if i+1 in setval and j-1 in setval:
-                        list1.append( (i+1, j-1) )
-                        
-                    if i in setval and j-1 in setval:
-                        list1.append( (i, j-1) )
+                    if self.current_state[i][j] == color: 
+                        if i-1 in setval and j-1 in setval:
+                            list1.append((i-1, j-1))
+                            
+                        if i-1 in setval and j in setval:
+                            list1.append((i-1, j))
+                            
+                        if i-1 in setval and j+1 in setval:
+                            list1.append((i-1, j+1))
+                            
+                        if i in setval and j+1 in setval:
+                            list1.append( (i, j+1) )
+                            
+                        if i+1 in setval and j+1 in setval:
+                            list1.append( (i+1, j+1) )
+                            
+                        if i+1 in setval and j in setval:
+                            list1.append( (i+1, j) )
+                            
+                        if i+1 in setval and j-1 in setval:
+                            list1.append( (i+1, j-1) )
+                            
+                        if i in setval and j-1 in setval:
+                            list1.append( (i, j-1) )
                     
                     
         
@@ -152,11 +158,11 @@ class Playthrough:
                 s += 'v'
             if c == color:
                 if old == neg_color:
-                    s += 'v'
+                    s += 'a'
                 s += 'p'
             if c != color or i == len(line)-1:
                 if c == neg_color and len(s) > 0:
-                    s += 'v'
+                    s += 'a'
                 elif i == len(line)-1:
                     s += 'p'
                 if s in pattern_dict.keys():
@@ -195,7 +201,7 @@ class Playthrough:
         black_score = cls.get_score(board, True, is_black_turn)
         white_score = cls.get_score(board, False, is_black_turn)
         if black_score == 0: black_score = 1.0
-        return white_score / black_score
+        return white_score - black_score
 
     @classmethod
     def get_score(cls, board: Game, is_black: bool, is_black_turn: bool):
@@ -212,32 +218,34 @@ class Playthrough:
             if pattern.count('p') == 5:
                 if pattern[0] == 'v' and pattern[-1] == 'v':
                     pass
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    pass
                 else:
                     score += 100000
             if pattern.count('p') == 4:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 10000 * pattern_dict[pattern]
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
                     score += 5000 * pattern_dict[pattern]
                 else:
                     score += 10000 * pattern_dict[pattern]
             if pattern.count('p') == 3:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 1000 * pattern_dict[pattern]
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
                     score += 500 * pattern_dict[pattern]
                 else:
                     score += 1000 * pattern_dict[pattern]
             if pattern.count('p') == 2:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                   score -= 100 * pattern_dict[pattern]
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
                     score += 50 * pattern_dict[pattern]
                 else:
                     score += 100 * pattern_dict[pattern]
             if pattern.count('p') == 1:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 1 * pattern_dict[pattern]
                 else:
                     score += 1 * pattern_dict[pattern]
         return score
@@ -249,11 +257,11 @@ class Playthrough:
         
 
         start = time.time()
-        value, best_move = cls.__search_winning_move(board)
+        value, best_move = cls.__search_winning_move(board,is_black)
         if best_move is not None:
             move = best_move
         else:
-            value, best_move = cls.minimax_alphabeta(board, depth, -1.0, 100000000, True)
+            value, best_move = cls.minimax_alphabeta(board, depth, -1.0, 100000000, True, is_black)
             if best_move is None:
                 move = None
             else:
@@ -280,11 +288,11 @@ class Playthrough:
         return sorted(all_moves, key=lambda move: my_func(board, move), reverse=True)
 
     @classmethod
-    def minimax_alphabeta(cls, board: Game, depth, alpha, beta, is_max):
+    def minimax_alphabeta(cls, board: Game, depth, alpha, beta, is_max,is_black):
         if depth == 0:
             return (cls.evaluate_board(board, not is_max), None)
 
-        all_possible_moves = board.generate_moves()
+        all_possible_moves = board.generate_moves(is_black)
         all_possible_moves = cls.heuristic_sort(board, all_possible_moves)
 
         if len(all_possible_moves) == 0:
@@ -297,7 +305,7 @@ class Playthrough:
             for move in all_possible_moves:
                 dumm_board = Game(np.array(board))
                 dumm_board.draw(move, False)
-                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max)
+                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max,is_black)
                 if value > alpha:
                     alpha = value
                 if value >= beta:
@@ -310,7 +318,7 @@ class Playthrough:
             for move in all_possible_moves:
                 dumm_board = Game(np.array(board))
                 dumm_board.draw(move, True)
-                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max)
+                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max,is_black)
                 if value < beta:
                     beta = value
                 if value <= alpha:
@@ -321,17 +329,17 @@ class Playthrough:
         return (best_value, best_move)
 
     @classmethod
-    def __search_winning_move(cls, board: Game):
-        all_possible_moves = board.generate_moves()
+    def __search_winning_move(cls, board: Game,is_black):
+        all_possible_moves = board.generate_moves(is_black)
 
         for move in all_possible_moves:
             dumm_board = Game(board.current_state)
             dumm_board.draw(move, False)
-            if dumm_board.check_win(move,'O'):
+            if dumm_board.check_win('O'):
                 return (None, move)
             dumm_board = Game(board.current_state)
             dumm_board.draw(move, True)
-            if dumm_board.check_win(move,'X'):
+            if dumm_board.check_win('X'):
                 return (None, move)
         return (None, None)
 
@@ -364,21 +372,23 @@ def Gomoku():
                 j = int(input("Position de la colonne de votre réponse ?"))
                 move = (i,j)
                 board.draw(move,False)
-                if board.check_win(move,"O"):
-                    return( "Domination du joueur la machine s'avoue vaincu")
+                board.draw_board()
+                
                 
             else:
                 print()
                 print("Tour de la machine:")
                 move = Playthrough.find_next_move(board, 4, True)
                 board.draw(move,True)
-                if board.check_win(move,"X"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                board.draw_board()
                 
-            board.draw_board()
+                
+            
             n += 1
-            
-            
+            if board.check_win("O"):
+                return( "Domination du joueur la machine s'avoue vaincu")
+            if board.check_win("X"):
+                return("Domination de la machine, c'est une splendide victoire pour elle")
     else: 
         print()
         print("Tour de la machine:")
@@ -396,8 +406,7 @@ def Gomoku():
                 print("Tour de la machine:")
                 move = Playthrough.find_next_move(board, 4, False)
                 board.draw(move,False)
-                if board.check_win(move,"O"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                board.draw_board()
                 
             else:
                 print()
@@ -406,13 +415,15 @@ def Gomoku():
                 j = int(input("Position de la colonne de votre réponse ?"))
                 move = (i,j)
                 board.draw(move,True)
-                if board.check_win(move,"X"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                board.draw_board()
                 
                 
-            board.draw_board()
-            n += 1
             
+            n += 1
+            if board.check_win("O"):
+                return("Domination de la machine, c'est une splendide victoire pour elle")
+            if board.check_win("X"):
+                return("Domination du joueur la machine s'avoue vaincu")
     
     return( "Egalité : il n'y a plus de jetons")
 
