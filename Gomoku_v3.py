@@ -1,20 +1,16 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat May 14 23:17:25 2022
 
-@author: sophi
-"""
 
 import numpy as np
 setval = set(i for i in range(15))
 import time
 import math
+import random
+col=('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O')
 
-class Player:
-    WHITE = 'O'
-    BLACK = 'X'
+# WHITE = 'O'
+# BLACK = 'X'
     
-class Game:
+class Game:         #classe permettant d'initialiser le jeu 
 
     def __init__(self,val= None):
         if type(val)==np.array:    
@@ -24,139 +20,145 @@ class Game:
             
     
 
-    def initialize_game(self):
+    def initialize_game(self):  #le jeu est initialisé comme une matrice 15x15,pleine de '.'
         self.current_state = np.full((15, 15),'.')
+        
     
-    def draw_board(self):
-        for i in range(0, 15):
-            for j in range(0, 15):
-                print('{}|'.format(self.current_state[i,j]), end=" ")
-            print()
+    def draw_board(self):   #affichage de notre plateau avec les colonnes (A-O) et les lignes allant de 1-15
+        print('   ',end='')
+        for k in col:
+          print(k,' ',end='')
         print()
+        for i in range(1, len(self.current_state)+1):
+            if(int(i)<10):
+                print(i,' ',end='')
+            else:
+                print(i,'',end='')
+            for j in self.current_state[i-1]:
+                print(j,' ',end='')
+            print()
             
-    
-    def __check_col(self,move, color):
-        i,j = move
-        if (self.current_state[i,j] == color and
-            self.current_state[i,j] == self.current_state[i+1,j] and
-            self.current_state[i+1,j] == self.current_state[i+2,j] and
-            self.current_state[i+2,j] == self.current_state[i+3,j] and
-            self.current_state[i+3,j] == self.current_state[i+4,j]):
-            return True
+    def deuxieme_coup(self):#pour respecter les conditions de debut, on impose si necessaire le 2e coup
+        liste = [(3,3),(11,11),(3,11),(11,3)]
+        return random.choice(liste)
+        
+    def check_col(self, color): #verifie un gain par colonne
+        neg_color = 'O' if color == 'X' else 'O'
+        for i in range(15-4):
+            for j in range(15):
+                window = self.current_state[i:i+5, j]
+                if (window== np.full((5),color)).all():
+                    if 0 <= i-1 and i+5 < 15:
+                        if self.current_state[i-1, j] == neg_color and self.current_state[i+5, j] == neg_color:
+                            continue
+                    return True
         return False
 
-    def __check_row(self,move, color):
-        i,j = move
-        if (all(self.current_state[i,j:j+5] == [color]*5)):
-            return True
+    def check_row(self, color): #verifie un gain par ligne
+        neg_color = 'O' if color == 'X' else 'X'
+        for i in range(15):
+            for j in range(15-4):
+                window = self.current_state[i, j:j+5]
+                if (window== np.full((5),color)).all():
+                    if 0 <= j-1 and j+5 < 15:
+                        if self.current_state[i, j-1] == neg_color and self.current_state[i, j+5] == neg_color:
+                            continue
+                    return True
         return False
 
-    def __check_diagonal_right(self, move, color):
-        j,i = move
-        if (self.current_state[j,i] == color and
-            self.current_state[j,i] == self.current_state[j+1,i+1] and
-            self.current_state[j+1,i+1] == self.current_state[j+2,i+2] and
-            self.current_state[j+2,i+2] == self.current_state[j+3,i+3] and
-            self.current_state[j+3,i+3] == self.current_state[j+4,i+4]):
+    def check_diag(self, color): #verifie un gain par diagonale
+        neg_color = 'O' if color == 'X' else 'X'
+        for i in range(15-4):
+            for j in range(15-4):
+                window = self.current_state[i:i+5, j:j+5]
+                if (window.diagonal()==np.full((5),color)).all():
+                    if 0 <= i-1 and i+5 < 15 and 0 < j-1 and j+5 < 15:
+                        if self.current_state[i-1, j-1] == neg_color and self.current_state[i+5, j+5] == neg_color:
+                            continue
+                    return True
+                if (np.fliplr(window).diagonal()== np.full((5),color)).all():
+                    if 0 <= i-1 and i+5 < 15 and 0 < j-1 and j+5 < 15:
+                        if self.current_state[i-1, j+5] == neg_color and self.current_state[i+5, j-1] == neg_color:
+                            continue
+                    return True
+        return False
+
+    def check_win(self, color): #verifie un gain sur le plateau pour une couleur spécifique
+        if self.check_row(color):
+            return True
+        if self.check_col(color):
+            return True
+        if self.check_diag(color):
             return True
         return False
     
-    def __check_diagonal_left(self, move, color):
-        j,i = move
-        if (self.current_state[j,i] == color and
-            self.current_state[j,i] == self.current_state[j-1,i-1] and
-            self.current_state[j-1,i-1] == self.current_state[j-2,i-2] and
-            self.current_state[j-2,i-2] == self.current_state[j-3,i-3] and
-            self.current_state[j-3,i-3] == self.current_state[j-4,i-4]):
-            return True
-        return False
-
-    def check_win(self,move, color):
-        if self.__check_row(move,color):
-            return True
-        if self.__check_col(move,color):
-            return True
-        if self.__check_diagonal_right(move,color):
-            return True
-        if self.__check_diagonal_left(move,color):
-            return True
-        return False
-    
-    def generate_moves(self):
+    def generate_moves(self,is_black): #genere les coups possibles
+        color = 'O' if is_black else 'X'
         setval = set(i for i in range(15)) 
         Coups = []
         list1 = []
         list2 = []
         for i in range(0,15):
             for j in range(0,15):
-                if self.current_state[i][j] != '.':
+                if self.current_state[i][j] != '.': # on se place a cote des cases deja occupées par des pions
                     list2.append((i, j))
-                    if i-1 in setval and j-1 in setval:
-                        list1.append((i-1, j-1))
-                        
-                    if i-1 in setval and j in setval:
-                        list1.append((i-1, j))
-                        
-                    if i-1 in setval and j+1 in setval:
-                        list1.append((i-1, j+1))
-                        
-                    if i in setval and j+1 in setval:
-                        list1.append( (i, j+1) )
-                        
-                    if i+1 in setval and j+1 in setval:
-                        list1.append( (i+1, j+1) )
-                        
-                    if i+1 in setval and j in setval:
-                        list1.append( (i+1, j) )
-                        
-                    if i+1 in setval and j-1 in setval:
-                        list1.append( (i+1, j-1) )
-                        
-                    if i in setval and j-1 in setval:
-                        list1.append( (i, j-1) )
+                    if self.current_state[i][j] == color: #on prioritise les pions de l'adversaire
+                        if i-1 in setval and j-1 in setval:
+                            list1.append((i-1, j-1))
+                            
+                        if i-1 in setval and j in setval:
+                            list1.append((i-1, j))
+                            
+                        if i-1 in setval and j+1 in setval:
+                            list1.append((i-1, j+1))
+                            
+                        if i in setval and j+1 in setval:
+                            list1.append( (i, j+1) )
+                            
+                        if i+1 in setval and j+1 in setval:
+                            list1.append( (i+1, j+1) )
+                            
+                        if i+1 in setval and j in setval:
+                            list1.append( (i+1, j) )
+                            
+                        if i+1 in setval and j-1 in setval:
+                            list1.append( (i+1, j-1) )
+                            
+                        if i in setval and j-1 in setval:
+                            list1.append( (i, j-1) )
                     
                     
         
-        Coups = list(set(list1) - set(list2))
+        Coups = list(set(list1) - set(list2)) #on garde uniquement les cases libres
                    
         return Coups
     
-    def draw(self, move, is_black):
+    def put(self, move, is_black): #place le pion au bon endroit
         color = 'X' if is_black else 'O'
         self.current_state[move] = color
         
-    def swap(self):
-        board = self.current_state
-        for i in range(15):
-            for j in range(15):
-                if board[i][j] == 'X':
-                    board[i][j] = 'O'
-                elif board[i][j] == 'O':
-                    board[i][j] = 'X'
-        return board
 
-    
-class Playthrough:
     evaluation_count = 0
-    calculation_time = 0
 
-    @classmethod
-    def __get_patterns(cls, line, pattern_dict, is_black):
+
+
+    def get_patterns(self, line, pattern_dict, is_black): #parcours le plateau en recherche des patterns de jeu
         color = 'X' if is_black else 'O'
         neg_color = 'O' if is_black else 'X'
         s = ''
         old = "."
-
+        
+        # 'p' correspond au pion de notre couleur, 'a' au pion de l'adversaire et 'v' a une case vide
         for i, c in enumerate(line):
             if i == '.':
                 s += 'v'
             if c == color:
                 if old == neg_color:
-                    s += 'v'
+                    s += 'a'
                 s += 'p'
             if c != color or i == len(line)-1:
                 if c == neg_color and len(s) > 0:
-                    s += 'v'
+                    s += 'a'
                 elif i == len(line)-1:
                     s += 'p'
                 if s in pattern_dict.keys():
@@ -166,138 +168,115 @@ class Playthrough:
                 s = ''
             old = c
 
-    @classmethod
-    def __get_patterns_row(cls, board: Game, pattern_dict, is_black):
-        size = 15
-        matrix = board.current_state
-        for i in range(size):
-            cls.__get_patterns(matrix[i], pattern_dict, is_black)
 
-    @classmethod
-    def __get_patterns_col(cls, board: Game, pattern_dict, is_black):
-        size = 15
-        matrix = board.current_state
-        for i in range(size):
-            cls.__get_patterns(matrix[:, i], pattern_dict, is_black)
+    def get_patterns_row(self, pattern_dict, is_black): #cherche les motifs par ligne
+        matrix = self.current_state
+        for i in range(15):
+            self.get_patterns(matrix[i], pattern_dict, is_black)
 
-    @classmethod
-    def __get_patterns_diagonal(cls, board: Game, pattern_dict, is_black):
-        size = 15
-        matrix1 = board.current_state
+
+    def get_patterns_col(self, pattern_dict, is_black): #cherche les motifs par colonne
+        matrix = self.current_state
+        for i in range(15):
+            self.get_patterns(matrix[:, i], pattern_dict, is_black)
+
+
+    def get_patterns_diag(self, pattern_dict, is_black):    #cherche les motifs par diag
+        matrix1 = self.current_state
         matrix2 = matrix1[::-1,:]
-        for i in range(-size+1, size):
-            cls.__get_patterns(matrix1.diagonal(i), pattern_dict, is_black)
-            cls.__get_patterns(matrix2.diagonal(i), pattern_dict, is_black)
+        for i in range(-16, 15):
+            self.get_patterns(matrix1.diagonal(i), pattern_dict, is_black)
+            self.get_patterns(matrix2.diagonal(i), pattern_dict, is_black)
 
     @classmethod
-    def evaluate_board(cls, board: Game, is_black_turn: bool):
-        cls.evaluation_count += 1
-        black_score = cls.get_score(board, True, is_black_turn)
-        white_score = cls.get_score(board, False, is_black_turn)
-        if black_score == 0: black_score = 1.0
-        return white_score / black_score
-
-    @classmethod
-    def get_score(cls, board: Game, is_black: bool, is_black_turn: bool):
-        pattern_dict = {}
-        cls.__get_patterns_row(board, pattern_dict, is_black)
-        cls.__get_patterns_col(board, pattern_dict, is_black)
-        cls.__get_patterns_diagonal(board, pattern_dict, is_black)
-        return cls.get_consecutive_score(pattern_dict)
-
-    @classmethod
-    def get_consecutive_score(cls, pattern_dict):
+    def get_pattern_score(self, pattern_dict):       #pour chaque potif on associe un score 
+        #on fait la difference entre les arrangements perdant (pion de l'adversaire de chaque coté)
+        #les arrangements morts ( pion de l'adversaire d'un coté)
+        #les arrangements vivants (les deux cases entourant le motif sont vides)
+        
         score = 0
         for pattern in pattern_dict:
             if pattern.count('p') == 5:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                else:
-                    score += 100000
+                score += 1000000
+                
             if pattern.count('p') == 4:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
-                    score += 5000 * pattern_dict[pattern]
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 10000 
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
+                    score += 5000 
                 else:
-                    score += 10000 * pattern_dict[pattern]
+                    score += 10000
             if pattern.count('p') == 3:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
-                    score += 500 * pattern_dict[pattern]
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 1000
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
+                    score += 500
                 else:
-                    score += 1000 * pattern_dict[pattern]
+                    score += 1000
             if pattern.count('p') == 2:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
-                elif pattern[0] == 'v' or pattern[-1] == 'v':
-                    score += 50 * pattern_dict[pattern]
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                   score -= 100 * pattern_dict[pattern]
+                elif pattern[0] == 'a' or pattern[-1] == 'a':
+                    score += 50
                 else:
-                    score += 100 * pattern_dict[pattern]
+                    score += 100
             if pattern.count('p') == 1:
-                if pattern[0] == 'v' and pattern[-1] == 'v':
-                    pass
+                if pattern[0] == 'a' and pattern[-1] == 'a':
+                    score -= 1
                 else:
-                    score += 1 * pattern_dict[pattern]
+                    score += 1 
         return score
+    
 
-    @classmethod
-    def find_next_move(cls, board: Game, depth, is_black):
-        cls.evaluation_count = 0
-        cls.calculation_time = 0
-        
+    def get_score(self, is_black: bool, is_black_turn: bool): #on fait un score total de tous les pattern
+        pattern_dict = {}
+        self.get_patterns_row( pattern_dict, is_black)
+        self.get_patterns_col(pattern_dict, is_black)
+        self.get_patterns_diag(pattern_dict, is_black)
+        return self.get_pattern_score(pattern_dict)
 
-        start = time.time()
-        value, best_move = cls.__search_winning_move(board)
-        if best_move is not None:
-            move = best_move
-        else:
-            value, best_move = cls.minimax_alphabeta(board, depth, -1.0, 100000000, True)
-            if best_move is None:
-                move = None
-            else:
-                move = best_move
-        end = time.time()
-        cls.calculation_time = end-start
-        if move is None:
-            move = (15//2, 15//2)
-        return move
 
-    @classmethod
-    def heuristic_sort(cls, board, all_moves):
-        def my_func(board, move):
-            x, y = move
-            count = 0
-            size = 15
-            for i in [-1, 0, 1]:
-                for j in [-1, 0, 1]:
-                    if 0 <= x+i < size and 0 <= y+j < size:
-                        if board.current_state[x+i,y+j] != '.':
-                            count += 1
-            return count
+    def evaluate_board(self, is_black_turn: bool,is_black : bool): #on associe un score aux blancs et au noirs
+        self.evaluation_count += 1
+        black_score = self.get_score(True, is_black_turn)
+        white_score = self.get_score(False, is_black_turn)
+        #en focntion de celui qui joue on retourne une difference en particulier
+        return black_score - white_score if is_black else white_score - black_score
+    
 
-        return sorted(all_moves, key=lambda move: my_func(board, move), reverse=True)
+    def count_occup(self, move): #compte le nbr de cases occupées autour de la case qui nous interesse
+        x, y = move
+        count = 0
+        for i in [-1, 0, 1]:
+            for j in [-1, 0, 1]:
+                if 0 <= x+i < 15 and 0 <= y+j < 15:
+                    if self.current_state[x+i,y+j] != '.':
+                        count += 1
+        return count
 
-    @classmethod
-    def minimax_alphabeta(cls, board: Game, depth, alpha, beta, is_max):
+
+    def heuristic_sort(self, all_moves): # notre heuristique : classe les coups possibles par le nombre de cases ocupées
+        return sorted(all_moves, key=lambda move: self.count_occup(move), reverse=True)
+
+    
+    def MinMax_alphabeta(self, depth, alpha, beta, is_max,is_black): #l'algo minmax
         if depth == 0:
-            return (cls.evaluate_board(board, not is_max), None)
+            return (self.evaluate_board( not is_max,is_black), None)
 
-        all_possible_moves = board.generate_moves()
-        all_possible_moves = cls.heuristic_sort(board, all_possible_moves)
+        all_possible_moves = self.generate_moves(is_black)
+        all_possible_moves = self.heuristic_sort(all_possible_moves)
 
         if len(all_possible_moves) == 0:
-            return (cls.evaluate_board(board, not is_max), None)
+            return (self.evaluate_board( not is_max,is_black), None)
 
         best_move = None
 
         if is_max:
             best_value = -math.inf
             for move in all_possible_moves:
-                dumm_board = Game(np.array(board))
-                dumm_board.draw(move, False)
-                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max)
+                dumm_board = Game(np.array(self))
+                dumm_board.put(move, False)
+                value, temp_move = dumm_board.MinMax_alphabeta( depth-1, alpha, beta, not is_max,is_black)
                 if value > alpha:
                     alpha = value
                 if value >= beta:
@@ -308,9 +287,9 @@ class Playthrough:
         else:
             best_value = math.inf
             for move in all_possible_moves:
-                dumm_board = Game(np.array(board))
-                dumm_board.draw(move, True)
-                value, temp_move = cls.minimax_alphabeta(dumm_board, depth-1, alpha, beta, not is_max)
+                dumm_board = Game(np.array(self))
+                dumm_board.put(move, True)
+                value, temp_move = dumm_board.MinMax_alphabeta( depth-1, alpha, beta, is_max,is_black)
                 if value < beta:
                     beta = value
                 if value <= alpha:
@@ -320,21 +299,15 @@ class Playthrough:
                     best_move = move
         return (best_value, best_move)
 
-    @classmethod
-    def __search_winning_move(cls, board: Game):
-        all_possible_moves = board.generate_moves()
-
-        for move in all_possible_moves:
-            dumm_board = Game(board.current_state)
-            dumm_board.draw(move, False)
-            if dumm_board.check_win(move,'O'):
-                return (None, move)
-            dumm_board = Game(board.current_state)
-            dumm_board.draw(move, True)
-            if dumm_board.check_win(move,'X'):
-                return (None, move)
-        return (None, None)
-
+    def find_next_move(self, depth, is_black): #recherche du prochain coup
+        self.evaluation_count = 0
+        move = None
+        alpha = -math.inf
+        beta = math.inf
+        value, best_move = self.MinMax_alphabeta(depth, alpha, beta, True, is_black)
+        if best_move is not None:
+            move = best_move
+        return move
 
 def Gomoku():
 
@@ -342,77 +315,102 @@ def Gomoku():
     board.current_state[7,7]='X'
     board.draw_board()
     
-    joueur1 = int(input("La machine joue en 1 ou en 2 ?"))
+    joueur1 = input("La machine joue en 1 ou en 2 ?")
 
     n = 0
-    if joueur1 == 1:
-        print()
-        print("Tour du joueur: veuillez placer un O")
-        print("Le joueur doit jouer à l'exterieur du carré de côté 7 de centre H8")
-        i = int(input("Position de la ligne de votre réponse ?"))
-        j = int(input("Position de la colonne de votre réponse ?"))
-        move = (i,j)
-        board.draw(move,False)
-        board.draw_board()
-        n += 1
+    
+    col=('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O')
+    index_col=list(range(15)) 
+    dico_col = {x:y for x,y in zip(col,index_col)}
+    
+    if joueur1 == "1":
         
-        while n < 119:
+       while n < 60:
             if n%2 == 0:
                 print()
                 print("Tour du joueur: veuillez placer un O")
+                j = (input("Position de la colonne de votre réponse ?"))
                 i = int(input("Position de la ligne de votre réponse ?"))
-                j = int(input("Position de la colonne de votre réponse ?"))
-                move = (i,j)
-                board.draw(move,False)
-                if board.check_win(move,"O"):
-                    return( "Domination du joueur la machine s'avoue vaincu")
+                j = dico_col[j]
+                move = (i-1,j)
+                board.put(move,False)
+                board.draw_board()
                 
+            elif n== 1:
+                print()
+                print("Tour de la machine:")
+                start = time.time()
+                move = board.find_next_move(4, True)
+                if i in set(i for i in range(4,12)) or i in set(i for i in range(j,12)):
+                    move = board.deuxieme_coup()
+
+                board.put(move,True)
+                board.draw_board()
+                end = time.time()
+                temps = end-start
+                print("temps = ",temps)
             else:
                 print()
                 print("Tour de la machine:")
-                move = Playthrough.find_next_move(board, 4, True)
-                board.draw(move,True)
-                if board.check_win(move,"X"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                start = time.time()
+                move = board.find_next_move(4, True)
+                board.put(move,True)
+                board.draw_board()
+                end = time.time()
+                temps = end-start
+                print("temps = ",temps)
                 
-            board.draw_board()
+                
+            
             n += 1
-            
-            
+            if board.check_win("O"):
+                 return( "Domination du joueur la machine s'avoue vaincu")
+            if board.check_win("X"):
+                 return("Domination de la machine, c'est une splendide victoire pour elle")
     else: 
         print()
         print("Tour de la machine:")
-        print("L'ordinateur doit jouer à l'exterieur du carré de côté 7 de centre H8")
-        i = int(input("Position de la ligne de la réponse de l'ordinateur ?"))
-        j = int(input("Position de la colonne de la réponse de l'ordinateur ?"))
-        move = (i,j)
-        board.draw(move,False)
-        board.draw_board()
-        n += 1
+
         
-        while n < 119:
+        while n < 60:
             if n%2 == 0:
                 print()
                 print("Tour de la machine:")
-                move = Playthrough.find_next_move(board, 4, False)
-                board.draw(move,False)
-                if board.check_win(move,"O"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                start = time.time()
+                move = board.find_next_move(4, False)
+                board.put(move,False)
+                board.draw_board()
+                end = time.time()
+                temps = end-start
+                print("temps = ",temps)
                 
+            elif n == 1:
+                print()
+                print("Tour du joueur: veuillez placer un O")
+                print("Le joueur doit jouer à l'exterieur du carré de côté 7 de centre H8")
+                j = (input("Position de la colonne de votre réponse ?"))
+                i = int(input("Position de la ligne de votre réponse ?"))
+                
+                move = (i-1,dico_col[j])
+                board.put(move,True)
+                board.draw_board()
             else:
                 print()
                 print("Tour du joueur: veuillez placer un X")
+                j = (input("Position de la colonne de votre réponse ?"))
                 i = int(input("Position de la ligne de votre réponse ?"))
-                j = int(input("Position de la colonne de votre réponse ?"))
-                move = (i,j)
-                board.draw(move,True)
-                if board.check_win(move,"X"):
-                    return("Domination de la machine, c'est une splendide victoire pour elle")
+                
+                move = (i-1,dico_col[j])
+                board.put(move,True)
+                board.draw_board()
                 
                 
-            board.draw_board()
-            n += 1
             
+            n += 1
+            if board.check_win("O"):
+                 return("Domination de la machine, c'est une splendide victoire pour elle")
+            if board.check_win("X"):
+                return("Domination du joueur la machine s'avoue vaincu")
     
     return( "Egalité : il n'y a plus de jetons")
 
